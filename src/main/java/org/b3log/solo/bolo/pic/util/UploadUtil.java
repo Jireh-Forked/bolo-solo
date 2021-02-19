@@ -194,8 +194,7 @@ public class UploadUtil {
 
                 try {
                     minioClient.putObject(putObjectArgs);
-                    String host = endpoint + ":" + port + "/" + bucketMinio;
-
+                    String host = endpoint + ":" + port + "/" + bucketMinio + "/";
                     result = host + fileName;
                 } catch (QiniuException e) {
                     throw new NullPointerException();
