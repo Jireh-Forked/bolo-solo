@@ -21,6 +21,7 @@ import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
+import com.aliyun.oss.common.utils.StringUtils;
 import com.aliyun.oss.model.PutObjectRequest;
 import com.google.gson.Gson;
 import com.qiniu.common.QiniuException;
@@ -31,8 +32,11 @@ import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.model.DefaultPutRet;
 import com.qiniu.util.Auth;
 import com.upyun.RestManager;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -47,21 +51,22 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 import org.b3log.latke.Latkes;
+import org.b3log.solo.util.DateUtil;
 import org.json.JSONObject;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URLEncoder;
+import java.io.InputStream;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * <h3>bolo-solo</h3>
@@ -71,6 +76,24 @@ import java.util.Map;
  * @date : 2020-03-06 14:35
  **/
 public class UploadUtil {
+
+    public static String fileName(String originalFilename) {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+
+        return "upload/" + DateUtil.today() + "/" + (new UUID(random.nextLong(), random.nextLong())).toString().replace("-", "") + "." +
+                getFileExtension(originalFilename);
+    }
+
+    public static String getFileExtension(String fullName) {
+        if (!StringUtils.hasValue(fullName)) {
+            return "";
+        } else {
+            String fileName = (new File(fullName)).getName();
+            int dotIndex = fileName.lastIndexOf(46);
+            return dotIndex == -1 ? "" : fileName.substring(dotIndex + 1);
+        }
+    }
+
     public static String upload(String config, File file) throws Exception {
         String result = "";
         String type = config.split("<<>>")[0];
@@ -92,7 +115,7 @@ public class UploadUtil {
                 }
 
                 // 传入文件
-                File localNewFile =  new File(path + "/" +  localFilename);
+                File localNewFile = new File(path + "/" + localFilename);
                 FileUtils.copyFile(file, localNewFile);
                 result = Latkes.getServePath() + "/image/" + localFilename;
                 break;
@@ -150,6 +173,34 @@ public class UploadUtil {
                     throw new NullPointerException();
                 }
                 break;
+            case "minio":
+                String accessKeyMinio = config.split("<<>>")[1];
+                String secretKeyMinio = config.split("<<>>")[2];
+                String bucketMinio = config.split("<<>>")[3];
+                String endpoint = config.split("<<>>")[4];
+                String port = config.split("<<>>")[5];
+
+                MinioClient minioClient = MinioClient.builder().endpoint(endpoint, Integer.parseInt(port), false).credentials(accessKeyMinio, secretKeyMinio).build();
+
+                InputStream in = new FileInputStream(file);
+
+                String fileName = fileName(file.getName());
+                long size = in.available();
+                PutObjectArgs putObjectArgs = PutObjectArgs.builder()
+                        .bucket(bucketMinio)
+                        .object(fileName)
+                        .stream(in, size, -1)
+                        .build();
+
+                try {
+                    minioClient.putObject(putObjectArgs);
+                    String host = endpoint + ":" + port + "/" + bucketMinio;
+
+                    result = host + fileName;
+                } catch (QiniuException e) {
+                    throw new NullPointerException();
+                }
+                break;
             case "aliyun":
                 String accessKeyID = config.split("<<>>")[1];
                 String accessKeySecret = config.split("<<>>")[2];
@@ -160,9 +211,9 @@ public class UploadUtil {
                 String filename;
                 try {
                     String subDir = config.split("<<>>")[7];
-                    filename = subDir + "/" + RandomStringUtils.randomAlphanumeric(3) + "_" +  file.getName();
+                    filename = subDir + "/" + RandomStringUtils.randomAlphanumeric(3) + "_" + file.getName();
                 } catch (Exception e) {
-                    filename = RandomStringUtils.randomAlphanumeric(3) + "_" +  file.getName();
+                    filename = RandomStringUtils.randomAlphanumeric(3) + "_" + file.getName();
                 }
                 OSS ossClient = new OSSClientBuilder().build(endPoint, accessKeyID, accessKeySecret);
                 PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, filename, file);
@@ -170,7 +221,7 @@ public class UploadUtil {
                     ossClient.putObject(putObjectRequest);
                     ossClient.shutdown();
                     result = aliTreaty + "://" + bucketDomain + "/" + filename;
-                } catch (OSSException| ClientException e) {
+                } catch (OSSException | ClientException e) {
                     throw new NullPointerException();
                 }
                 break;
@@ -180,7 +231,7 @@ public class UploadUtil {
                 String pwd = config.split("<<>>")[3];
                 String upDomain = config.split("<<>>")[4];
                 String upTreaty = config.split("<<>>")[5];
-                String filenm = RandomStringUtils.randomAlphanumeric(3) + "_" +  file.getName();
+                String filenm = RandomStringUtils.randomAlphanumeric(3) + "_" + file.getName();
 
                 RestManager manager = new RestManager(zoneName, name, pwd);
                 manager.setApiDomain(RestManager.ED_AUTO);
@@ -195,6 +246,7 @@ public class UploadUtil {
 
     /**
      * 设置可访问https
+     *
      * @return
      */
     public static CloseableHttpClient createSSLClientDefault() {
@@ -205,7 +257,7 @@ public class UploadUtil {
                     return true;
                 }
             }).build();
-            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext,SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
 
             return HttpClients.custom().setSSLSocketFactory(sslsf).build();
         } catch (KeyManagementException e) {

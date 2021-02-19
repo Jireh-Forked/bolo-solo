@@ -307,6 +307,13 @@
             <artifactId>rome</artifactId>
             <version>0.9</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.minio/minio -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
