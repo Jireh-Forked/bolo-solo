@@ -265,6 +265,7 @@
             <option value="hacpai">链滴图床（默认）</option>
             <option value="local">本地图床</option>
             <option value="qiniu">七牛云</option>
+            <option value="minio">Minio</option>
             <option value="aliyun">阿里云</option>
             <option value="upyun">又拍云</option>
             <option value="picuang">基于 Picuang 的自搭建图床</option>
@@ -326,6 +327,20 @@
                         $('#td5').html('<b>Bucket 绑定的域名（不需要填写协议，正确示例：qiniu.stackoverflow.wiki）</b>');
                         $('#td6').show(); $('#tc6').show();
                         $('#td6').html('<b>协议（填写英文小写 http 或 https，以你的设定为准）</b>');
+                        break;
+                    case 'minio':
+                        $('#td1').show();
+                        $('#td1').html('Bolo 支持Minio');
+                        $('#td2').show(); $('#tc2').show();
+                        $('#td2').html('<b>AccessKey</b>');
+                        $('#td3').show(); $('#tc3').show();
+                        $('#td3').html('<b>SecretKey</b>');
+                        $('#td4').show(); $('#tc4').show();
+                        $('#td4').html('<b>Bucket 名称</b>');
+                        $('#td5').show(); $('#tc5').show();
+                        $('#td5').html('<b>Minio地址 绑定的域名（不需要填写端口，正确示例：http://minio.url）</b>');
+                        $('#td6').show(); $('#tc6').show();
+                        $('#td6').html('<b>Minio端口号</b>');
                         break;
                     case 'aliyun':
                         $('#td1').show();
@@ -400,6 +415,9 @@
                         break;
                     case 'qiniu':
                         $('#sourceTC').text('qiniu<<>>' + $('#tc2').val() + '<<>>' + $('#tc3').val() + '<<>>' + $('#tc4').val() + '<<>>' + $('#tc5').val() + '<<>>' + $('#tc6').val());
+                        break;
+                    case 'minio':
+                        $('#sourceTC').text('minio<<>>' + $('#tc2').val() + '<<>>' + $('#tc3').val() + '<<>>' + $('#tc4').val() + '<<>>' + $('#tc5').val() + '<<>>' + $('#tc6').val());
                         break;
                     case 'aliyun':
                         $('#sourceTC').text('aliyun<<>>' + $('#tc2').val() + '<<>>' + $('#tc3').val() + '<<>>' + $('#tc4').val() + '<<>>' + $('#tc5').val() + '<<>>' + $('#tc6').val() + '<<>>' + $('#tc7').val() + '<<>>' + $('#tc8').val());
