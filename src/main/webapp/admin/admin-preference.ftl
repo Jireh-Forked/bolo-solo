@@ -339,8 +339,6 @@
                         $('#td4').html('<b>Bucket 名称</b>');
                         $('#td5').show(); $('#tc5').show();
                         $('#td5').html('<b>Minio地址 绑定的域名（不需要填写端口，正确示例：http://minio.url）</b>');
-                        $('#td6').show(); $('#tc6').show();
-                        $('#td6').html('<b>Minio端口号</b>');
                         break;
                     case 'aliyun':
                         $('#td1').show();
