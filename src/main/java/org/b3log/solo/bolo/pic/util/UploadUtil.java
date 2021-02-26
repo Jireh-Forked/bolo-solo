@@ -181,7 +181,7 @@ public class UploadUtil {
                 String endpoint = config.split("<<>>")[4];
                 String port = config.split("<<>>")[5];
 
-                MinioClient minioClient = MinioClient.builder().endpoint(endpoint, Integer.parseInt(port), false).credentials(accessKeyMinio, secretKeyMinio).build();
+                MinioClient minioClient = MinioClient.builder().endpoint(endpoint).credentials(accessKeyMinio, secretKeyMinio).build();
 
                 InputStream in = new FileInputStream(file);
 
