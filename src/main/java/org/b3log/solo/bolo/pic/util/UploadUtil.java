@@ -178,7 +178,6 @@ public class UploadUtil {
                 String secretKeyMinio = config.split("<<>>")[2];
                 String bucketMinio = config.split("<<>>")[3];
                 String endpoint = config.split("<<>>")[4];
-                String port = config.split("<<>>")[5];
 
                 MinioClient minioClient = MinioClient.builder().endpoint(endpoint).credentials(accessKeyMinio, secretKeyMinio).build();
 
@@ -194,7 +193,7 @@ public class UploadUtil {
 
                 try {
                     minioClient.putObject(putObjectArgs);
-                    String host = endpoint + ":" + port + "/" + bucketMinio + "/";
+                    String host = endpoint + "/" + bucketMinio + "/";
                     result = host + fileName;
                 } catch (QiniuException e) {
                     throw new NullPointerException();
